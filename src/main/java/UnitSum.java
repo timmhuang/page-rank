@@ -19,6 +19,8 @@ public class UnitSum {
 
             //input format: toPage\t unitMultiplication
             //target: pass to reducer
+            String[] input = value.toString().trim().split("\t");
+            context.write(new Text(input[0]), new DoubleWritable(Double.parseDouble(input[1])));
         }
     }
 
@@ -28,8 +30,13 @@ public class UnitSum {
         public void reduce(Text key, Iterable<DoubleWritable> values, Context context)
                 throws IOException, InterruptedException {
 
-           //input key = toPage value = <unitMultiplication>
+            //input key = toPage value = <unitMultiplication>
             //target: sum!
+            double sum = 0;
+            for (DoubleWritable dw : values) {
+                sum += dw.get();
+            }
+            context.write(key, new DoubleWritable(sum));
         }
     }
 

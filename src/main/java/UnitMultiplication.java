@@ -12,6 +12,7 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashMap;
 
 public class UnitMultiplication {
 
@@ -22,6 +23,12 @@ public class UnitMultiplication {
 
             //input format: fromPage\t toPage1,toPage2,toPage3
             //target: build transition matrix unit -> fromPage\t toPage=probability
+            String[] line = value.toString().trim().split("\t");
+            String fromPage = line[0];
+            String[] toPages = line[1].split(",");
+            for (int i = 0; i < toPages.length; ++i) {
+                context.write(new Text(fromPage), new Text(toPages[i] + "=" + 1.0/toPages.length));
+            }
         }
     }
 
@@ -32,6 +39,8 @@ public class UnitMultiplication {
 
             //input format: Page\t PageRank
             //target: write to reducer
+            String[] input = value.toString().trim().split("\t");
+            context.write(new Text(input[0]), new Text(input[1]));
         }
     }
 
@@ -44,6 +53,21 @@ public class UnitMultiplication {
 
             //input key = fromPage value=<toPage=probability..., pageRank>
             //target: get the unit multiplication
+            double pr = 0;
+            HashMap<String, Double> transition = new HashMap<String, Double>();
+            for (Text t : values) {
+                String[] v = t.toString().trim().split("=");
+                if (v.length == 1) {
+                    pr = Double.parseDouble(v[0]);
+                } else {
+                    transition.put(v[0], Double.parseDouble(v[1]));
+                }
+            }
+
+            for (String page : transition.keySet()) {
+                String sub_rank = String.valueOf(pr * transition.get(page));
+                context.write(new Text(page), new Text(sub_rank));
+            }
         }
     }
 
@@ -54,7 +78,6 @@ public class UnitMultiplication {
         job.setJarByClass(UnitMultiplication.class);
 
         //how chain two mapper classes?
-
         job.setReducerClass(MultiplicationReducer.class);
 
         job.setOutputKeyClass(Text.class);

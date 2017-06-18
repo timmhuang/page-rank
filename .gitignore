@@ -1,3 +1,9 @@
 Data.iml
 .idea/*
 .idea
+build/*
+build
+*.jar
+*.class
+pagerank*
+output*
